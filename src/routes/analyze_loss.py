@@ -19,7 +19,7 @@ def before_request():
 
 @api.route("", methods=['POST', 'GET'])
 def index() -> Response:
-    if request.method == 'GET':
+    if request.method == 'POST':
         if 'after' not in request.files:
             response = jsonify({"error": "食べる前と食べた後の写真をアップロードしてください"})
             response.status_code = 400
