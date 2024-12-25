@@ -42,3 +42,8 @@ def calculate_score(after_path: str) -> int:
     # スコアを算出（例: 残量の割合を元に10点刻みで100点満点）
     score = int((1 - soup_ratio) * 10) * 10
     return max(score, 0)
+
+
+if __name__ == "__main__":
+    score = calculate_score("/Users/gohan/Downloads/20241212_203628.jpg")
+    print(score)
