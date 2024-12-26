@@ -1,49 +1,71 @@
 import cv2
 import numpy as np
-from typing import Tuple, Optional
+import matplotlib.pyplot as plt
 
-def detect_circles(img: np.ndarray) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+def calculate_score(img_path: str) -> str:
+    # 画像を読み込む
+    img = cv2.imread(img_path)
+
     # グレースケールに変換
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # 二値化
+    _, binary = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
 
-    # ぼかしを適用
-    blurred = cv2.GaussianBlur(gray, (15, 15), 0)
+    # 輪郭を検出
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Hough変換を使用して円を検出
-    circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, dp=1.2, minDist=100, param1=100, param2=30, minRadius=50, maxRadius=300)
+    # 一番大きい輪郭を見つける
+    largest_contour = max(contours, key=cv2.contourArea)
+    contour_area = cv2.contourArea(largest_contour)
 
-    if circles is not None:
-        circles = np.round(circles[0, :]).astype("int")
-        # 器の円とスープの円を区別するために、最も大きな円を器の円と仮定
-        bowl_circle = max(circles, key=lambda c: c[2])
-        # 残りの円の中で最も大きな円をスープの円と仮定
-        soup_circle = max([c for c in circles if not np.array_equal(c, bowl_circle)], key=lambda c: c[2], default=None)
-        return bowl_circle, soup_circle
+    # 輪郭に近い部分の色を取得
+    mask_outer = np.zeros_like(binary)
+    cv2.drawContours(mask_outer, [largest_contour], -1, 255, thickness=cv2.FILLED) # type: ignore
+    
+    # 輪郭から一定の距離内のピクセルを取得
+    distance_transform = cv2.distanceTransform(mask_outer, cv2.DIST_L2, 5)
+    mask_near_contour = ((distance_transform < 35) & (distance_transform > 10)).astype(np.uint8) * 255  # 距離20ピクセル以内の領域をマスク
+    
+    inner_contour_color = np.median(gray[mask_near_contour == 255]) # type: ignore
+    threshold_value = inner_contour_color - 65
 
-    return None, None
+    # 再度二値化
+    _, binary_inner = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
 
-def calculate_score(after_path: str) -> int:
-    # 画像を読み込む
-    after_img = cv2.imread(after_path)
+    # マスクを作成
+    mask = np.zeros_like(binary_inner)
+    cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED) # type: ignore
 
-    # 器の円とスープの円を検出
-    bowl_circle, soup_circle = detect_circles(after_img)
+    # マスクされた領域の黒色ピクセル数をカウント
+    black_pixels = np.sum((binary_inner == 0) & (mask == 255))
+    
+    # お皿全体のピクセル数をカウント
+    total_pixels = binary_inner.size
 
-    if bowl_circle is None or soup_circle is None:
-        return 0  # 円が検出されなかった場合、スコアは0
+    # 黒色ピクセルの割合を計算
+    black_ratio = black_pixels / total_pixels
+    
+    # スコアを決定
+    if black_ratio <= 0.04:
+        score = "GOLD"
+    else:
+        # 輪郭の面積に基づいて距離の閾値を調整
+        distance_threshold = 20 + (contour_area / 10000)  # 面積が大きいほど閾値を大きくする いじる必要あり
+        # 黒色ピクセルの塊と輪郭との距離を計算
+        black_pixel_distances = distance_transform[(binary_inner == 0) & (mask == 255)]
+        if np.mean(black_pixel_distances) < distance_threshold: # type: ignore
+            score = "SILVER"
+        else:
+            score = "BRONZE"
 
-    # 器の面積とスープの面積を計算
-    bowl_area = np.pi * (bowl_circle[2] ** 2)
-    soup_area = np.pi * (soup_circle[2] ** 2)
-
-    # スープの割合を計算
-    soup_ratio = soup_area / bowl_area
-
-    # スコアを算出（例: 残量の割合を元に10点刻みで100点満点）
-    score = int((1 - soup_ratio) * 10) * 10
-    return max(score, 0)
+    return score
 
 
 if __name__ == "__main__":
-    score = calculate_score("/Users/gohan/Downloads/20241212_203628.jpg")
-    print(score)
+    # テスト画像のパス（ユーザーが指定した画像パスに置き換えてください）
+    test_image_path = '/Users/ae/Desktop/ラーメン画像/具残し2.png'
+
+    # 黒色部分の割合を計算して表示
+    print(calculate_score(test_image_path))
+
