@@ -4,3 +4,4 @@ class Rank(Enum):
     GOLD = 1
     SILVER = 2
     BRONZE = 3
+    ERROR = 4
