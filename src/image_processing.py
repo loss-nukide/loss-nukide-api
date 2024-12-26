@@ -37,7 +37,7 @@ def calculate_score(img_path: str) -> Rank:
     h, w = gray.shape
     corners = [gray[:10, :10].flatten(), gray[:10, -10:].flatten(), gray[-10:, :10].flatten(), gray[-10:, -10:].flatten()]
     
-    corner_means = [np.mean(corner) for corner in corners]
+    corner_means = [np.mean(corner) for corner in corners] # type: ignore
     
     top_two_white_corners_mean = np.mean(sorted(corner_means)[-2:])
     
