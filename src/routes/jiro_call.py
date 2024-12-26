@@ -28,3 +28,14 @@ def create_jiroCall():
         jiroCalls = [{"shopName": jiroCall.shopName, "amountOfnoodles": jiroCall.amountOfnoodles, "amountOfBegetables": jiroCall.amountOfBegetables, "amountOfNinniku": jiroCall.amountOfNinniku, "amountOfKarame": jiroCall.amountOfKarame, "ammountOfAbura": jiroCall.ammountOfAbura} for jiroCall in jiroCalls]
         return jsonify(jiroCalls), 200
 
+@bp.route('/<int:id>', methods=['GET']) # type: ignore
+def get_jiroCall(id:int):
+    jiroCall = JiroCall.query.filter_by(id=id).first()
+    if not jiroCall:
+        return jsonify({"error": "二郎のコールが見つかりません"}), 404
+
+    return jsonify({"Noodles": jiroCall.amountOfnoodles, 
+                    "Vegetable": jiroCall.amountOfBegetables,
+                    "Ninniku": jiroCall.amountOfNinniku,
+                    "Karame": jiroCall.amountOfKarame,
+                    "Abura": jiroCall.ammountOfAbura}), 200
