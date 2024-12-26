@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 from utils.rank import Rank
 
@@ -12,7 +11,7 @@ def calculate_score(img_path: str) -> Rank:
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
     # 二値化
-    _, binary = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+    _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY)
 
     # 輪郭を検出
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -53,10 +52,10 @@ def calculate_score(img_path: str) -> Rank:
         score = Rank.GOLD
     else:
         # 輪郭の面積に基づいて距離の閾値を調整
-        distance_threshold = 20 + (contour_area / 10000)  # 面積が大きいほど閾値を大きくする いじる必要あり
+        distance_threshold = 170  # 面積が大きいほど閾値を大きくする いじる必要あり
         # 黒色ピクセルの塊と輪郭との距離を計算
         black_pixel_distances = distance_transform[(binary_inner == 0) & (mask == 255)]
-        if np.mean(black_pixel_distances) < distance_threshold: # type: ignore
+        if np.mean(black_pixel_distances) > distance_threshold: # type: ignore
             score = Rank.SILVER
         else:
             score = Rank.BRONZE
@@ -66,7 +65,7 @@ def calculate_score(img_path: str) -> Rank:
 
 if __name__ == "__main__":
     # テスト画像のパス（ユーザーが指定した画像パスに置き換えてください）
-    test_image_path = '/Users/ae/Desktop/ラーメン画像/具残し2.png'
+    test_image_path = '/Users/ae/Desktop/ラーメン画像/具残し5.png'
 
     # 黒色部分の割合を計算して表示
     print(calculate_score(test_image_path))
