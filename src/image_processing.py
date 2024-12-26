@@ -11,7 +11,7 @@ def calculate_score(img_path: str) -> Rank:
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
     # 二値化
-    _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY)
+    _, binary = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
 
     # 輪郭を検出
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -29,7 +29,27 @@ def calculate_score(img_path: str) -> Rank:
     mask_near_contour = ((distance_transform < 35) & (distance_transform > 10)).astype(np.uint8) * 255  # 距離20ピクセル以内の領域をマスク
     
     inner_contour_color = np.median(gray[mask_near_contour == 255]) # type: ignore
-    threshold_value = inner_contour_color - 65
+    threshold_value = inner_contour_color - 65 
+    
+
+    
+    # 背景が白すぎる場合の例外処理（画像の4隅を使用）
+    h, w = gray.shape
+    corners = [gray[:10, :10].flatten(), gray[:10, -10:].flatten(), gray[-10:, :10].flatten(), gray[-10:, -10:].flatten()]
+    
+    corner_means = [np.mean(corner) for corner in corners]
+    
+    top_two_white_corners_mean = np.mean(sorted(corner_means)[-2:])
+    
+    if top_two_white_corners_mean > 190:  # 閾値は適宜調整してください
+        print("背景が白すぎると判断されました。")
+        return Rank.ERROR
+    
+
+    # お皿が黒い場合の例外処理
+    if threshold_value < 112:
+        print("解析できませんでした。")
+        return Rank.ERROR
 
     # 再度二値化
     _, binary_inner = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
@@ -65,8 +85,7 @@ def calculate_score(img_path: str) -> Rank:
 
 if __name__ == "__main__":
     # テスト画像のパス（ユーザーが指定した画像パスに置き換えてください）
-    test_image_path = '/Users/ae/Desktop/ラーメン画像/具残し5.png'
+    test_image_path = '/Users/ae/Desktop/ラーメン画像/汁残し2.png'
 
     # 黒色部分の割合を計算して表示
     print(calculate_score(test_image_path))
-
