@@ -28,7 +28,7 @@ def index() -> Response:
 
     if not img.filename:
         response = jsonify({"error": "ファイル名が無効です"})
-        response.status_code = 401
+        response.status_code = 400
         return response
 
     # ファイルの保存
