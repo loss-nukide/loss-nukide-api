@@ -4,9 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
 numpy = "*"
 opencv-python = "*"
+flask = "*"
+flask-sqlalchemy = "*"
+flask-bcrypt = "*"
 
 [dev-packages]
 
