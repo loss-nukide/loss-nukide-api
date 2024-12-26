@@ -1,48 +1,54 @@
 import os
-from flask import Blueprint, jsonify, request
-
-from image_processing import calculate_score
-api = Blueprint('analyze-loss',
-                __name__,
-                url_prefix='/api/analyze-loss')
-from flask import Response
+from flask import Blueprint, jsonify, request, Response, current_app, Flask
 from werkzeug.utils import secure_filename
+from services.analyze import analyze_loss  
+import cv2
 
-# アップロード先ディレクトリ
+# Blueprintの定義
+api = Blueprint('analyze-loss', __name__, url_prefix='/api/analyze-loss')
+
+# アップロードディレクトリの設定
 UPLOAD_FOLDER = './uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-from flask import current_app
 
+# before_requestフックの設定
 @api.before_request
 def before_request():
     current_app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@api.route("", methods=['POST', 'GET'])
+# ルートの定義
+@api.route("", methods=['POST'])
 def index() -> Response:
-    if request.method == 'POST':
-        if 'after' not in request.files:
-            response = jsonify({"error": "食べる前と食べた後の写真をアップロードしてください"})
-            response.status_code = 400
-            return response
-
-        after = request.files['after']
-
-        if after.filename == None:
-            response = jsonify({"error": "ファイル名が無効です"})
-            response.status_code = 400
-            return response
-
-        # ファイルの保存
-        after_filename = secure_filename(after.filename)
-        after_path = os.path.join(UPLOAD_FOLDER, after_filename)
-        after.save(after_path)
-
-        # 画像処理
-        score = calculate_score(after_path)
-        return jsonify({"score": score})
-
-    else:
-        response = jsonify(message="Not implemented")
-        response.status_code = 501
+    if 'img' not in request.files:
+        response = jsonify({"error": "画像をアップロードしてください"})
+        response.status_code = 400
         return response
 
+    img = request.files['img']
+
+    if not img.filename:
+        response = jsonify({"error": "ファイル名が無効です"})
+        response.status_code = 400
+        return response
+
+    # ファイルの保存
+    img_filename = secure_filename(img.filename)
+    img_path = os.path.join(UPLOAD_FOLDER, img_filename)
+    img.save(img_path)
+
+    # 画像処理
+    image = cv2.imread(img_path)
+    if image is None:
+        response = jsonify({"error": "画像の読み込みに失敗しました"})
+        response.status_code = 500
+        return response
+
+    score = analyze_loss(image)
+    return jsonify({"score": str(score)})
+
+# FlaskアプリケーションにBlueprintを登録
+app = Flask(__name__)
+app.register_blueprint(api)
+
+if __name__ == "__main__":
+    app.run(port=8000, debug=True)
