@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, User
+from repository.models import db, User
 
 bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -27,3 +27,11 @@ def create_user():
         users = User.query.all()
         users = [{"name": user.name, "email": user.email} for user in users]
         return jsonify(users), 200
+
+@bp.route('/<int:id>', methods=['GET']) # type: ignore
+def get_name(id:int):
+    user = User.query.filter_by(id=id).first()
+    if not user:
+        return jsonify({"error": "ユーザーが見つかりません"}), 404
+
+    return jsonify({"name": user.name}), 200
