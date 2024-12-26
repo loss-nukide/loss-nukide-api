@@ -91,7 +91,7 @@ def analyze_loss(img: MatLike, color: str = "white")-> Rank:
         # 黒色ピクセルの塊と輪郭との距離を計算
         black_pixel_distances = distance_transform[(binary_inner == 0) & (mask == 255)]
         if(color == "white"):
-            if np.mean(black_pixel_distances) < distance_threshold: # type: ignore
+            if np.mean(black_pixel_distances) > distance_threshold: # type: ignore
                 score = Rank.SILVER
             else:
                 score = Rank.BRONZE
