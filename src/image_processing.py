@@ -2,7 +2,9 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-def calculate_score(img_path: str) -> str:
+from utils.rank import Rank
+
+def calculate_score(img_path: str) -> Rank:
     # 画像を読み込む
     img = cv2.imread(img_path)
 
@@ -48,16 +50,16 @@ def calculate_score(img_path: str) -> str:
     
     # スコアを決定
     if black_ratio <= 0.04:
-        score = "GOLD"
+        score = Rank.GOLD
     else:
         # 輪郭の面積に基づいて距離の閾値を調整
         distance_threshold = 20 + (contour_area / 10000)  # 面積が大きいほど閾値を大きくする いじる必要あり
         # 黒色ピクセルの塊と輪郭との距離を計算
         black_pixel_distances = distance_transform[(binary_inner == 0) & (mask == 255)]
         if np.mean(black_pixel_distances) < distance_threshold: # type: ignore
-            score = "SILVER"
+            score = Rank.SILVER
         else:
-            score = "BRONZE"
+            score = Rank.BRONZE
 
     return score
 
