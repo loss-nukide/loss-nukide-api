@@ -35,3 +35,13 @@ def get_name(id:int):
         return jsonify({"error": "ユーザーが見つかりません"}), 404
 
     return jsonify({"name": user.name}), 200
+
+@bp.route('/<int:id>/ateList', methods=['Get']) # type: ignore
+def get_ateList(id:int):
+    user = User.query.filter_by(id=id).first()
+    if not user:
+        return jsonify({"error": "ユーザーが見つかりません"}), 404
+
+    ateList = user.jiro_calls
+    ateList = [{"shopName": jiro_call.shopName, "amountOfnoodles": jiro_call.amountOfnoodles, "amountOfBegetables": jiro_call.amountOfBegetables, "amountOfNinniku": jiro_call.amountOfNinniku, "amountOfKarame": jiro_call.amountOfKarame, "ammountOfAbura": jiro_call.ammountOfAbura} for jiro_call in ateList]
+    return jsonify(ateList), 200
