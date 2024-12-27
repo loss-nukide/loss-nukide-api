@@ -7,6 +7,7 @@ bp = Blueprint('jiroCall', __name__, url_prefix='/jiroCall')
 def create_jiroCall():
     if request.method == 'POST':
         # フォームデータを取得
+        user_id = request.form.get('user_id')
         shopName = request.form.get('shopName')
         amountOfnoodles = request.form.get('amountOfnoodles')
         amountOfBegetables = request.form.get('amountOfBegetables')
@@ -17,7 +18,7 @@ def create_jiroCall():
         if not shopName or not amountOfnoodles or not amountOfBegetables or not amountOfNinniku or not amountOfKarame or not ammountOfAbura:
             return jsonify({"error": "店名、麺の量、野菜の量、ニンニクの量、カラメの量、アブラの量は必須です"}), 400
 
-        new_jiroCall = JiroCall(shopName=shopName, amountOfnoodles=amountOfnoodles, amountOfBegetables=amountOfBegetables, amountOfNinniku=amountOfNinniku, amountOfKarame=amountOfKarame, ammountOfAbura=ammountOfAbura)
+        new_jiroCall = JiroCall(user_id=user_id, shopName=shopName, amountOfnoodles=amountOfnoodles, amountOfBegetables=amountOfBegetables, amountOfNinniku=amountOfNinniku, amountOfKarame=amountOfKarame, ammountOfAbura=ammountOfAbura)
         db.session.add(new_jiroCall)
         db.session.commit()
 
